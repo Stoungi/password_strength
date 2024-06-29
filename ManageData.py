@@ -231,7 +231,7 @@ class PassTrain(PassData):
                 suggestions.append("Add some numbers.")
             if features[self.total_len] > 0 and features['unique_count'] > 0:
                 ratio_len_unique = features['total_len'] / features['unique_count']
-                if ratio_len_unique < 2.0:
+                if ratio_len_unique > 2.0:
                     suggestions.append("Increase character diversity: avoid repeating characters.")
 
         elif strength == 1:
