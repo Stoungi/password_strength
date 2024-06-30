@@ -163,7 +163,7 @@ class PassTrain(PassData):
             features = [
                 row[self.total_len],
                 row[self.unique_count],
-                row[self.unique_count] / row[self.total_len]
+                (row[self.unique_count] / row[self.total_len]) * 2
             ]
             self.X.append(features)
             self.y.append(row[self.strength])
