@@ -4,7 +4,8 @@ import time
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
-
+#the link below is the unprocessed data set used
+#https://www.kaggle.com/datasets/litvinenko630/password-correct/data
 
 class PassData:
     def _expand(self, line):
