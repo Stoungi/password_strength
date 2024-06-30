@@ -1,15 +1,12 @@
 import csv
 import math
+import time
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
-from time import time
+from sklearn.tree import DecisionTreeClassifier
 
 
 class PassData:
-
-
     def _expand(self, line):
         total_len = len(line)
         upper_case_count = sum(1 for char in line if char.isupper())
@@ -17,7 +14,6 @@ class PassData:
         special_count = sum(1 for char in line if not char.isalnum())
         numbers = sum(1 for char in line if char.isdigit())
         unique_count = len(set(line))
-
 
         return {
             'total_len': total_len,
@@ -36,7 +32,6 @@ class PassData:
         self.special_count = "special_count"
         self.unique_count = "unique_count"
         self.strength = "strength"
-        self.entropy = "entropy"
 
         try:
             self._file = open(fileName, mode="r")
@@ -154,9 +149,10 @@ class PassData:
 
 
 class PassTrain(PassData):
-
+    overall_time = 0  # Class-level variable to keep track of overall time
 
     def __init__(self, fileName="no proper file given"):
+        start_time = time.time()  # Start timing
         super().__init__(fileName)
         self.X = []
         self.y = []
@@ -178,26 +174,39 @@ class PassTrain(PassData):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2,
                                                                                 random_state=42)
 
-        # Train Logistic Regression model
-        self.logreg_model = LogisticRegression(max_iter=1000, random_state=42)
-        self.logreg_model.fit(self.X_train, self.y_train)
+        # Train Decision Tree model
+        self.tree_model = DecisionTreeClassifier(random_state=42)
+        self.tree_model.fit(self.X_train, self.y_train)
+
+        end_time = time.time()  # End timing
+        elapsed_time = end_time - start_time
+        PassTrain.overall_time += elapsed_time  # Add to overall time
+
+
 
     def bestGuess(self, rating_confidences):
-
         return max(rating_confidences, key=rating_confidences.get)
 
     def score_password(self, password):
+        start_time = time.time()  # Start timing
+
         # Get features for the password
         X_input = self.compareAndRate(password)
 
         # Transform X_input using the same StandardScaler instance
         X_input_scaled = self.scaler.transform([X_input])
 
-        # Predict probabilities for each class using Logistic Regression model
+        # Predict probabilities for each class using Decision Tree model
         confidence_scores = {}
-        probabilities = self.logreg_model.predict_proba(X_input_scaled)[0]
+        probabilities = self.tree_model.predict_proba(X_input_scaled)[0]
         for strength_class, probability in enumerate(probabilities):
             confidence_scores[strength_class] = probability
+
+        end_time = time.time()  # End timing
+        elapsed_time = end_time - start_time
+        PassTrain.overall_time += elapsed_time  # Add to overall time
+
+
 
         return self.bestGuess(confidence_scores)
 
@@ -255,6 +264,7 @@ class PassTrain(PassData):
                 "Your password is strong. No improvements needed, but you can always add more complexity for even better security.")
 
         return suggestions
+
 
 
 
