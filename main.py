@@ -15,3 +15,6 @@ if score == 1:
     print(data.suggestImprovements(password))
 if score == 2:
     print(data.suggestImprovements(password))
+
+
+print(f"Overall time: {PassTrain.overall_time:.2f} seconds")
