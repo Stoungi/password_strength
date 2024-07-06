@@ -1,7 +1,9 @@
 from ManageData import PassTrain
 
-data = PassTrain("processed_data.csv", input("give a password to score\n~>>"))
+
+password = input("give a password to score\n~>>")
 print("processing please wait")
+data = PassTrain("processed_data.csv", password)
 
 # note if you wanted to use it how it was before when you do data.score_passowrd(<input>, do_guess = True)
 
