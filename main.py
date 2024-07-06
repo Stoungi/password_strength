@@ -1,20 +1,18 @@
 from ManageData import PassTrain
 
-password = input("give a password to score\n~>>")
+data = PassTrain("processed_data.csv", input("give a password to score\n~>>"))
 print("processing please wait")
-data = PassTrain("processed_data.csv")
 
-score = data.score_password(password)
+# note if you wanted to use it how it was before when you do data.score_passowrd(<input>, do_guess = True)
 
 
-if score == 0:
+if data.score == 0: 
     print("your password is pretty bad, here is how you can improve it:")
-    print(data.suggestImprovements(password))
-if score == 1:
+    print(data.suggestImprovements(data.improve))
+if data.score == 1:
     print("your password is good, but can do better:")
-    print(data.suggestImprovements(password))
-if score == 2:
-    print(data.suggestImprovements(password))
-
+    print(data.suggestImprovements(data.improve))
+if data.score == 2:
+    print(data.suggestImprovements(data.improve))
 
 print(f"Overall time: {PassTrain.overall_time:.2f} seconds")
