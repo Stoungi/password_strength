@@ -26,13 +26,13 @@ class PassData:
         }
 
     def __init__(self, fileName="no proper file given"):
-        self.total_len = "total_len"
-        self.upper_case_count = "upper_case_count"
-        self.lower_case_count = "lower_case_count"
-        self.numbers = "numbers"
-        self.special_count = "special_count"
-        self.unique_count = "unique_count"
-        self.strength = "strength"
+        self._total_len = "total_len"
+        self._upper_case_count = "upper_case_count"
+        self._lower_case_count = "lower_case_count"
+        self._numbers = "numbers"
+        self._special_count = "special_count"
+        self._unique_count = "unique_count"
+        self._strength = "strength"
 
         try:
             self._file = open(fileName, mode="r")
@@ -51,19 +51,19 @@ class PassData:
 
         for row in self._content:
             try:
-                row[self.total_len] = int(row[self.total_len])
-                row[self.upper_case_count] = int(row[self.upper_case_count])
-                row[self.lower_case_count] = int(row[self.lower_case_count])
-                row[self.numbers] = int(row[self.numbers])
-                row[self.special_count] = int(row[self.special_count])
-                row[self.unique_count] = int(row[self.unique_count])
-                row[self.strength] = int(row[self.strength])
+                row[self._total_len] = int(row[self._total_len])
+                row[self._upper_case_count] = int(row[self._upper_case_count])
+                row[self._lower_case_count] = int(row[self._lower_case_count])
+                row[self._numbers] = int(row[self._numbers])
+                row[self._special_count] = int(row[self._special_count])
+                row[self._unique_count] = int(row[self._unique_count])
+                row[self._strength] = int(row[self._strength])
 
-                if row[self.strength] == 0:
+                if row[self._strength] == 0:
                     self.contentS0.append(row)
-                elif row[self.strength] == 1:
+                elif row[self._strength] == 1:
                     self.contentS1.append(row)
-                elif row[self.strength] == 2:
+                elif row[self._strength] == 2:
                     self.contentS2.append(row)
             except Exception as e:
                 print(f"Error processing row: {e}")
@@ -96,7 +96,7 @@ class PassData:
         if rating == "avg":
             count = 0
             for row in self.content:
-                count += row[self.strength]
+                count += row[self._strength]
             return math.ceil(count / len(self.content))
         if rating == 0:
             return len(self.contentS0)
@@ -110,7 +110,7 @@ class PassData:
             return self.content
         filt = []
         for row in self.content:
-            if row[self.total_len] == leng:
+            if row[self._total_len] == leng:
                 filt.append(row)
         return filt
 
@@ -121,21 +121,21 @@ class PassData:
         elif leng == "avg":
             count = 0
             for row in self.content:
-                count += row[self.total_len]
+                count += row[self._total_len]
             return math.ceil(count / len(self.content))
 
         elif leng == "max":
-            max_len = max(row[self.total_len] for row in self.content)
+            max_len = max(row[self._total_len] for row in self.content)
             return max_len
 
         elif leng == "min":
-            min_len = min(row[self.total_len] for row in self.content)
+            min_len = min(row[self._total_len] for row in self.content)
             return min_len
 
         else:
             count = 0
             for row in self.content:
-                if row[self.total_len] == leng:
+                if row[self._total_len] == leng:
                     count += 1
             return count
 
@@ -152,7 +152,7 @@ class PassData:
 class PassTrain(PassData):
     overall_time = 0  # Class-level variable to keep track of overall time
 
-    def __init__(self, fileName="no proper file given"):
+    def __init__(self, fileName="no proper file given", input=-1):
         start_time = time.time()  # Start timing
         super().__init__(fileName)
         self.X = []
@@ -161,12 +161,12 @@ class PassTrain(PassData):
         for row in self.content:
             # Use only total_len and unique_count for features
             features = [
-                row[self.total_len],
-                row[self.unique_count],
-                (row[self.unique_count] / row[self.total_len]) * 2
+                row[self._total_len],
+                row[self._unique_count],
+                (row[self._unique_count] / row[self._total_len]) * 2
             ]
             self.X.append(features)
-            self.y.append(row[self.strength])
+            self.y.append(row[self._strength])
 
         # Create and fit StandardScaler
         self.scaler = StandardScaler()
@@ -183,12 +183,14 @@ class PassTrain(PassData):
         elapsed_time = end_time - start_time
         PassTrain.overall_time += elapsed_time  # Add to overall time
 
-
+        if input != -1:
+            self.score = self.score_password(input, True)
+            self.improve = self.suggestImprovements(input)
 
     def bestGuess(self, rating_confidences):
         return max(rating_confidences, key=rating_confidences.get)
 
-    def score_password(self, password):
+    def score_password(self, password, do_guess = False):
         start_time = time.time()  # Start timing
 
         # Get features for the password
@@ -207,55 +209,56 @@ class PassTrain(PassData):
         elapsed_time = end_time - start_time
         PassTrain.overall_time += elapsed_time  # Add to overall time
 
-
-
-        return self.bestGuess(confidence_scores)
+        if do_guess:
+            return self.bestGuess(confidence_scores)
+        else:
+            return confidence_scores
 
     def compareAndRate(self, password):
         features = self._expand(password)
         # Use only total_len and unique_count for features
         X_input = [
-            features[self.total_len],
-            features[self.unique_count],
-            features[self.unique_count] / features[self.total_len]
+            features[self._total_len],
+            features[self._unique_count],
+            features[self._unique_count] / features[self._total_len]
         ]
 
         return X_input
 
     def suggestImprovements(self, password):
         features = self._expand(password)
-        strength = self.score_password(password)
+        strength = self.score_password(password, True)
 
         suggestions = []
 
         if strength == 0:
-            if features[self.total_len] < 8:
+            if features[self._total_len] < 8:
                 suggestions.append("Increase the length of your password to at least 8 characters.")
-            if features[self.upper_case_count] == 0:
+            if features[self._upper_case_count] == 0:
                 suggestions.append("Add some uppercase letters.")
-            if features[self.lower_case_count] == 0:
+            if features[self._lower_case_count] == 0:
                 suggestions.append("Add some lowercase letters.")
-            if features[self.special_count] == 0:
+            if features[self._special_count] == 0:
                 suggestions.append("Include special characters like @, #, $, etc.")
-            if features[self.numbers] == 0:
+            if features[self._numbers] == 0:
                 suggestions.append("Add some numbers.")
-            if features[self.total_len] > 0 and features['unique_count'] > 0:
+            if features[self._total_len] > 0 and features['unique_count'] > 0:
                 ratio_len_unique = features['total_len'] / features['unique_count']
                 if ratio_len_unique > 2.0:
                     suggestions.append("Increase character diversity: avoid repeating characters.")
 
         elif strength == 1:
-            if features[self.total_len] < 14:
+            if features[self._total_len] < 14:
                 suggestions.append("Consider increasing the length of your password further.")
-            if features[self.upper_case_count] < 2:
+            if features[self._upper_case_count] < 2:
                 suggestions.append("Add a few more uppercase letters.")
-            if features[self.lower_case_count] < 2:
+            if features[self._lower_case_count] < 2:
                 suggestions.append("Add a few more lowercase letters.")
-            if features[self.special_count] < 2:
+            if features[self._special_count] < 2:
                 suggestions.append("Include a couple more special characters. (@, #, $, etc)")
-            if features[self.numbers] < 2:
+            if features[self._numbers] < 2:
                 suggestions.append("Add a few more numbers.")
-            if features[self.total_len] > 0 and features[self.unique_count] > 0:
+            if features[self._total_len] > 0 and features[self._unique_count] > 0:
                 ratio_len_unique = features['total_len'] / features['unique_count']
                 if ratio_len_unique > 2.0:
                     suggestions.append("Increase character diversity: avoid repeating characters.")
@@ -265,7 +268,5 @@ class PassTrain(PassData):
                 "Your password is strong. No improvements needed, but you can always add more complexity for even better security.")
 
         return suggestions
-
-
 
 
