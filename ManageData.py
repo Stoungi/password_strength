@@ -1,11 +1,12 @@
+#the link below is the unprocessed data set used
+#https://www.kaggle.com/datasets/litvinenko630/password-correct/data
 import csv
 import math
 import time
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
-#the link below is the unprocessed data set used
-#https://www.kaggle.com/datasets/litvinenko630/password-correct/data
+
 
 class PassData:
     def _expand(self, line):
@@ -160,6 +161,9 @@ class PassTrain(PassData):
 
         for row in self.content:
             # Use only total_len and unique_count for features
+            self.improve = ""
+            self.score = 0
+            self.history = []
             features = [
                 row[self._total_len],
                 row[self._unique_count],
@@ -184,14 +188,17 @@ class PassTrain(PassData):
         PassTrain.overall_time += elapsed_time  # Add to overall time
 
         if input != -1:
-            self.score = self.score_password(input, True)
-            self.improve = self.suggestImprovements(input)
+            self.score_password(input, True)
+            self.suggestImprovements(input)
+
+      
 
     def bestGuess(self, rating_confidences):
         return max(rating_confidences, key=rating_confidences.get)
 
     def score_password(self, password, do_guess = False):
         start_time = time.time()  # Start timing
+
 
         # Get features for the password
         X_input = self.compareAndRate(password)
@@ -208,7 +215,8 @@ class PassTrain(PassData):
         end_time = time.time()  # End timing
         elapsed_time = end_time - start_time
         PassTrain.overall_time += elapsed_time  # Add to overall time
-
+        self.score = self.bestGuess(confidence_scores)
+        self.suggestImprovements(password)
         if do_guess:
             return self.bestGuess(confidence_scores)
         else:
@@ -227,46 +235,51 @@ class PassTrain(PassData):
 
     def suggestImprovements(self, password):
         features = self._expand(password)
-        strength = self.score_password(password, True)
+        strength = self.score
 
         suggestions = []
 
         if strength == 0:
             if features[self._total_len] < 8:
-                suggestions.append("Increase the length of your password to at least 8 characters.")
+                suggestions.append(" Increase the length of your password to at least 8 characters. ")
             if features[self._upper_case_count] == 0:
-                suggestions.append("Add some uppercase letters.")
+                suggestions.append(" Add some uppercase letters. ")
             if features[self._lower_case_count] == 0:
-                suggestions.append("Add some lowercase letters.")
+                suggestions.append(" Add some lowercase letters. ")
             if features[self._special_count] == 0:
-                suggestions.append("Include special characters like @, #, $, etc.")
+                suggestions.append(" Include special characters like @, #, $, etc. ")
             if features[self._numbers] == 0:
-                suggestions.append("Add some numbers.")
+                suggestions.append(" Add some numbers. ")
             if features[self._total_len] > 0 and features['unique_count'] > 0:
                 ratio_len_unique = features['total_len'] / features['unique_count']
                 if ratio_len_unique > 2.0:
-                    suggestions.append("Increase character diversity: avoid repeating characters.")
+                    suggestions.append(" Increase character diversity: avoid repeating characters. ")
 
         elif strength == 1:
             if features[self._total_len] < 14:
-                suggestions.append("Consider increasing the length of your password further.")
+                suggestions.append(" Consider increasing the length of your password further. ")
             if features[self._upper_case_count] < 2:
-                suggestions.append("Add a few more uppercase letters.")
+                suggestions.append(" Add a few more uppercase letters. ")
             if features[self._lower_case_count] < 2:
-                suggestions.append("Add a few more lowercase letters.")
+                suggestions.append(" Add a few more lowercase letters. ")
             if features[self._special_count] < 2:
-                suggestions.append("Include a couple more special characters. (@, #, $, etc)")
+                suggestions.append(" Include a couple more special characters. (@, #, $, etc) ")
             if features[self._numbers] < 2:
-                suggestions.append("Add a few more numbers.")
+                suggestions.append(" Add a few more numbers. ")
             if features[self._total_len] > 0 and features[self._unique_count] > 0:
                 ratio_len_unique = features['total_len'] / features['unique_count']
                 if ratio_len_unique > 2.0:
-                    suggestions.append("Increase character diversity: avoid repeating characters.")
+                    suggestions.append(" Increase character diversity: avoid repeating characters. ")
 
         else:
             suggestions.append(
-                "Your password is strong. No improvements needed, but you can always add more complexity for even better security.")
+                " Your password is strong. No improvements needed, but you can always add more complexity for even better security. ")
 
+
+
+        self.improve = suggestions
+        self.history.append([password, self.improve])
         return suggestions
+
 
 
