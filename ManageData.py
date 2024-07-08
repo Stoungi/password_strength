@@ -218,7 +218,7 @@ class PassTrain(PassData):
         self.score = self.bestGuess(confidence_scores)
         self.suggestImprovements(password)
         if do_guess:
-            return self.bestGuess(confidence_scores)
+            return self.score
         else:
             return confidence_scores
 
