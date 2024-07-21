@@ -1,14 +1,24 @@
-#the link below is the unprocessed data set used
-#https://www.kaggle.com/datasets/litvinenko630/password-correct/data
 import csv
 import math
 import time
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
+from abc import ABC, abstractmethod
+from typing import List, Dict, Any
+
+class Isearch(ABC):
+    @abstractmethod
+    def getBy(self, criteria: Dict[str, Any], bool) -> List[Dict[str, Any]]:
+        pass
+
+class Icount(ABC):
+    @abstractmethod
+    def countBy(self, criteria: Dict[str, Any], bool) -> int:
+        pass
 
 
-class PassData:
+class PassData(Isearch, Icount, ABC):
     def _expand(self, line):
         total_len = len(line)
         upper_case_count = sum(1 for char in line if char.isupper())
@@ -27,6 +37,7 @@ class PassData:
         }
 
     def __init__(self, fileName="no proper file given"):
+
         self._total_len = "total_len"
         self._upper_case_count = "upper_case_count"
         self._lower_case_count = "lower_case_count"
@@ -75,74 +86,25 @@ class PassData:
         self.contentS1 = tuple(self.contentS1)
         self.contentS2 = tuple(self.contentS2)
 
-    def getI(self, index=-1):
-        if index == -1:
-            return self.content
-        else:
-            return self.content[index]
+    def getBy(self, **criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        def matches(row: Dict[str, Any]) -> bool:
+            for attr, value in criteria.items():
+                if row.get(attr) != value:
+                    return False
+            return True
 
-    def getIByStrength(self, rating=-1):
-        if rating == -1:
-            return self.getI()
-        if rating == 0:
-            return self.contentS0
-        if rating == 1:
-            return self.contentS1
-        if rating == 2:
-            return self.contentS2
+        return [row for row in self.content if matches(row)]
 
-    def countByStrength(self, rating=-1):
-        if rating == -1:
-            return len(self.content)
-        if rating == "avg":
-            count = 0
-            for row in self.content:
-                count += row[self._strength]
-            return math.ceil(count / len(self.content))
-        if rating == 0:
-            return len(self.contentS0)
-        if rating == 1:
-            return len(self.contentS1)
-        if rating == 2:
-            return len(self.contentS2)
+    def countBy(self, **criteria: Dict[str, Any]) -> int:
+        return len(self.getBy(**criteria))
 
-    def getIByLen(self, leng=-1):
-        if leng == -1:
-            return self.content
-        filt = []
-        for row in self.content:
-            if row[self._total_len] == leng:
-                filt.append(row)
-        return filt
 
-    def countByLen(self, leng=-1):
-        if leng == -1:
-            return "no length given"
 
-        elif leng == "avg":
-            count = 0
-            for row in self.content:
-                count += row[self._total_len]
-            return math.ceil(count / len(self.content))
-
-        elif leng == "max":
-            max_len = max(row[self._total_len] for row in self.content)
-            return max_len
-
-        elif leng == "min":
-            min_len = min(row[self._total_len] for row in self.content)
-            return min_len
-
-        else:
-            count = 0
-            for row in self.content:
-                if row[self._total_len] == leng:
-                    count += 1
-            return count
-
+    @abstractmethod
     def compareAndRate(self, password):
         pass
 
+    @abstractmethod
     def suggestImprovements(self, password):
         pass
 
@@ -280,6 +242,3 @@ class PassTrain(PassData):
         self.improve = suggestions
         self.history.append([password, self.improve])
         return suggestions
-
-
-
