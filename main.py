@@ -8,7 +8,7 @@ data = PassTrain("processed_data.csv")
 
 while True:
 
-    choice = int(input("what would you like to do?\n 1. rate password\n 2. history\n 3. exist\n~>>"))
+    choice = int(input("what would you like to do?\n 1. rate password\n 2. history\n 3. exit\n~>>"))
 
     if choice == 3:
         break
